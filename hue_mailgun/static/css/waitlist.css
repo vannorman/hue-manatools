@@ -1,0 +1,34 @@
+body{
+
+    background-color: #f70;
+    background-image: url(/static/img/grad1.png);
+    background-image: url(/static/img/mathsymbols.svg);
+}
+#title{
+    margin:0 auto;
+    text-align:center;
+    font-size:2em;
+}
+#main {
+    width: 640px;
+    margin: 0 auto;
+}
+
+@media screen and (max-width: 640px){
+    #main {
+        width: 90%;
+    }
+}
+#logo, #logo2, #logo3, #logo4 {
+    width:80px;
+    height:80px;
+    margin:0 auto;
+    background-image:url('/static/img/girlchop.png');
+    background-repeat:no-repeat;
+    background-size:contain;
+    display:inline-block;
+}
+#logo2{ background-image:url('/static/img/icon_spikeys.png'); }
+#logo3{ background-image:url('/static/img/icon_zooka.png'); }
+#logo4{ background-image:url('/static/img/boyzooka.png'); }
+p {width:75%;margin:0 auto;padding-top:20px;}

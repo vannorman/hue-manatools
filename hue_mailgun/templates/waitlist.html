@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply Now</title>
+    <link rel="icon" href="/static/img/mana_games_logo.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="/static/css/form2.css" />
+    <link rel="stylesheet" href="/static/css/waitlist.css" />
+    <script> const csrf = "{{ csrf }}" </script>
+    <script src="/static/js/jquery-min.js"></script>
+    <script src="/static/js/form2.js"></script>
+     <script>
+      // Initialize the agent at application startup.
+      var clientId = "Undetected";
+      const fpPromise = import('/static/js/v4.js')
+        .then(FingerprintJS => FingerprintJS.load())
+
+      // Get the visitor identifier when you need it.
+      fpPromise
+        .then(fp => fp.get())
+        .then(result => {
+          // This is the visitor identifier:
+          clientId = result.visitorId;
+        })
+    </script>
+
+</head>
+<body>
+    <div class="container">
+        <div id="main">
+            <div id="logos" style="text-align:center">
+                <div id="logo"></div>
+                <div id="logo2"></div>
+                <div id="logo3"></div>
+                <div id="logo4"></div>
+            </div>
+<div id="title">Game Waitlist</div>
+<p>The Secret of Infinity is an online multiplayer 3D math game. Enter your email to be notified when we open our game to beta users. </p>
+
+        </div>
+        <form class="centered-form" >
+            <br/> We will not spam you; email used only for updates about our game.</br>
+            <input type="text" placeholder="Email" id="email" name="field2" onclick="this.select();">
+            <input list="howhear2" name="howhear" placeholder="How did you hear about us?" id="howhear">
+              <datalist id="howhear2">
+                <option value="No idea">
+                <option value="Searched">
+                <option value="Someone told me">
+                <option value="Mathbreakers">
+                <option value="Super Math World">
+              </datalist>
+            <button id="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>
+
+

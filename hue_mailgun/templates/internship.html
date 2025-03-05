@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply Now</title>
+    <link rel="icon" href="/static/img/mana_games_logo.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="/static/css/form.css" />
+    <link rel="stylesheet" href="/static/css/internship.css" />
+    <script> const csrf = "{{ csrf }}" </script>
+    <script src="/static/js/jquery-min.js"></script>
+    <script src="/static/js/form.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div id="main">
+            <div id="logo"></div>
+<div id="title">🚀 Internship Opportunity 🚀</div>
+<p>At Mana Games, our mission is to change the world's relationship with mathematics through video games — and to enable creators everywhere to be a part of the journey.
+
+<h3>🎮 Game Design & Programming Intern</h3>
+<p>Join our dedicated team to design and craft the next big educational game. Dive deep into the coding world, and bring characters, scenarios, and learning experiences to life!
+
+<h3>📱 Social Media Marketing Intern</h3>
+<p>Unleash your creativity and tap into the ever-evolving realm of digital marketing. Curate engaging content, strategize ad campaigns, and interact with our amazing followers.
+
+<h3>🌐 Community Manager Intern</h3>
+<p>Become the voice of our brand! Engage, nurture, and grow our community. Build relationships, field inquiries, and ensure our users have the best experience possible.
+
+<h3>Why Intern with Us?</h3>
+<ul><li>🌱 Growth Mindset: Our team thrives on a positive vibe, and we’re in search of individuals with a can-do attitude and an insatiable hunger to learn and grow.
+<li>🤝 On-the-Job Training: No experience? No problem! We’ll equip you with the skills you need in game design, edtech, marketing, and community management. Learn from industry professionals and kickstart your career.
+<li>🚀 Future Opportunities: While this internship is currently unpaid, there's potential for a bright future here. Once we’re funded, standout interns may be offered full-time paid positions. Grow with us!
+
+Ready to embark on an exciting journey in the world of edtech and gaming? Apply now and be part of our innovative team!
+
+At Mana Games, we believe in the power of passion and dedication. We're committed to fostering a diverse and inclusive environment for all our interns. If you're ready to learn, grow, and make a difference, we want you on our team.
+
+
+
+        </div>
+        <form class="centered-form" >
+            <h1>Mana Games Internship Application</h1>
+            <div id="whichPosition">
+                <label for="which">Which position?:</label>
+                <select id="which" name="dropdown">
+                    <option value="none">-- Please Select -- </option>
+                    <option value="programming">Programming / Game Design</option>
+                    <option value="social_media">Social Media / Marketing</option>
+                    <option value="community_manager">Community Manager</option>
+                </select>
+            </div>
+             <input type="text" placeholder="Name" id="name" name="field1" required>
+            <input type="text" placeholder="Email" id="email" name="field2" >
+           <input type="text" placeholder="Link(s) to portfolio(s) if available" id="link1" name="field2" >
+            <input type="text" placeholder="How did you hear about us?" id="howhear" name="field2" >
+            <input type="text" placeholder="Additional Notes" id="message" name="field2" >
+            <button id="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>
+
