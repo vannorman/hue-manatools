@@ -15,20 +15,32 @@
         
         <form id="campaign-form">
 
-            <h2>Select a Campaign</h2>
+            Select a Campaign:
             <select id="campaign-dropdown">
                 <option value="">Loading campaigns...</option>
             </select>
-
-            
+            <div id="campaign-preview" style="width:80%;height:400px;border:1px solid blue;"></div>
+        <br/>
+        <div style="width:80%;height:200px;border:1px solid black;padding:20px;">
+            Select a List:
+            <select id="list-dropdown">
+                <option value="">Loading lists...</option>
+            </select>
+            <button style="display:none;" id="download-list">Download this list</button>
+        <br/>
+            <div style="width:80%;height:80px;background-color:#ccc;" id="example-data">Email samples will show up here</div>
+            <label for="csv-file">Upload new list (CSV File):</label>
+            <input type="file" id="csv-file" name="csv-file" accept=".csv" required>
+        </div>
+        <br/> 
+            From:
+            <select id="from-dropdown">
+                <option value="">Loading froms...</option>
+            </select>
+             
+        <br/>
             <label for="subject-line">Subject Line:</label>
             <input type="text" id="subject-line" name="subject-line" required><br><br>
-            
-            <label for="csv-file">Upload CSV File:</label>
-            <input type="file" id="csv-file" name="csv-file" accept=".csv" required><br><br>
-            
-            <button type="button" id="preview-csv">Preview CSV</button>
-            <div id="csv-preview"></div><br>
             
             <button type="button" id="run-test">Run Test</button>
             <div id="test-results"></div><br>
