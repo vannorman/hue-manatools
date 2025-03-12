@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script>
+        function updatePrice() {
+            let selectedProduct = document.getElementById("sku").selectedOptions[0];
+            let msrp = parseFloat(selectedProduct.getAttribute("data-msrp"));
+            let moq = parseInt(document.getElementById("moq").value);
+            let discount = parseFloat(document.getElementById("discount").value);
+            let quantity = parseInt(document.getElementById("quantity").value);
+            let carrier = document.getElementById("carrier").value;
+            
+            if (quantity < moq) {
+                document.getElementById("total_price").innerText = "MOQ not met!";
+                return;
+            }
+
+            let discountedPrice = msrp * (1 - discount / 100);
+            let totalCost = discountedPrice * quantity;
+
+            document.getElementById("total_price").innerText = "$" + totalCost.toFixed(2);
+        }
+    </script>
+</head>
+<body>
+    <h2>Dashboard</h2>
+
+    <p>Welcome, {{ user.username }}! (<a href="{{ url_for('logout') }}">Logout</a>)</p>
+
+    <h3>Create Order Quotation</h3>
+    <form method="POST" action="{{ url_for('dashboard') }}">
+        <label>Product:</label>
+        <select id="sku" name="sku" onchange="updatePrice()">
+            {% for product in products %}
+            <option value="{{ product.sku }}" data-msrp="{{ product.msrp }}">
+                {{ product.sku }} - {{ product.name }} (${{ product.msrp }})
+            </option>
+            {% endfor %}
+        </select><br>
+
+        <label>Quantity:</label>
+        <input type="number" id="quantity" name="quantity" value="{{ user.moq }}" min="{{ user.moq }}" onchange="updatePrice()" required><br>
+
+        <label>Shipping Carrier:</label>
+        <select id="carrier" name="carrier">
+            <option value="USPS">USPS</option>
+            <option value="FedEx">FedEx</option>
+        </select><br>
+
+        <label>Shipping Zip Code:</label>
+        <input type="text" id="zip_code" name="zip_code" required><br>
+
+        <input type="hidden" id="moq" value="{{ user.moq }}">
+        <input type="hidden" id="discount" value="{{ user.percent_discount }}">
+
+        <p>Total Price: <span id="total_price">$0.00</span></p>
+
+        <button type="submit">Get Quotation</button>
+    </form>
+</body>
+</html>
+

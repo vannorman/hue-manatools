@@ -9,12 +9,6 @@ load_dotenv()  # take API key from .env
 api_key = os.getenv("API_KEY")
 
 
-
-
-
-
-
-
 def get_contacts(email_file):
     with open(email_file) as file:
         lines = [line.rstrip() for line in file]

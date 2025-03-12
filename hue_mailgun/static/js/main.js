@@ -110,10 +110,64 @@ $(document).ready(function () {
         };
         reader.readAsText(file);
     });
-    
+
+    function ValidateFormData(){
+        let campaign = $('#campaign-dropdown').val();
+        let from = $('#from-dropdown').val();
+        let subject = $('#subject-line').val();
+        let testEmails  = $('#test-emails').val();
+
+        if (campaign == "") {
+            alert("No campaign!");
+            return {}
+        }
+
+        if (from == "") {
+            alert("No from address!");
+            return {}
+        }
+
+        if (subject == ""){
+            alert("No subject!");
+            return {}
+        }
+
+        if (!testEmails.includes('@')){
+            alert("No test email receipients!");
+        }
+        console.log(campaign);
+        const data = {
+            campaign : campaign, 
+            from : from, 
+            subject : subject, 
+            recipients : testEmails, 
+        }
+        return data; 
+
+    }
+
     $("#run-test").click(function () {
-        $.post("/run-test", $("#campaign-form").serialize(), function (data) {
-            $("#test-results").html(data);
+        let data = ValidateFormData();
+          $.ajax({
+            url: "/run-test", // Update to your Flask API URL
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(data),
+            success: function (response) {
+                if (response.success){
+                    console.log("S:"+JSON.stringify(response));
+
+                } else {
+                alert(response.message);
+                
+                }
+            },
+            error: function (response) {
+                console.log(JSON.parse(JSON.stringify(response)).message);
+                console.log(response);
+                console.log("er:"+JSON.stringify(response));
+            }
+
         });
     });
     
@@ -206,12 +260,12 @@ $(document).ready(function () {
             }),
             success: function (response) {
                 let dropdown = $("#list-dropdown");
-                dropdown.empty(); // Clear existing options
+                dropdown.empty(); // clear existing options
                 dropdown.append('<option value="">Select a List</option>'); // Default option
 
                 if (response.success) {
                     response.lists.forEach(function (x) {
-                        dropdown.append(`<option value="${x.data.id}">${x.data.listname} - ${x.data.count}</option>`);
+                        dropdown.append(`<option value="${x.data.id}">${x.data.filename} - ${x.data.listname} - ${x.data.count}</option>`);
                         // console.log("list data for "+x.data.id+" is "+JSON.stringify(x.data));
                         listData[x.data.id] = x.data;
                     });
@@ -238,7 +292,31 @@ $(document).ready(function () {
                     templateId:templateId
                 }),
                 success: function (response) {
-                    $('#campaign-preview').html(response.data);
+                    let iframe = document.getElementById('campaign-preview');
+                    let doc = iframe.contentDocument || iframe.contentWindow.document;
+
+                    iframe.onload = function() {
+                        iframe.style.height = iframe.contentWindow.document.body.scrollHeight + 10 + 'px';
+
+                        iframe.style.width  = iframe.contentWindow.document.body.scrollWidth + 'px';
+                    }
+                    doc.open();
+                    let htmlContent = response.data;
+                    doc.write(htmlContent);
+                    doc.close();
+                    /*
+                     setTimeout(() => {
+                        iframe.style.height=0;
+                        iframe.style.width=0;
+                        let body = doc.body, html = doc.documentElement;
+                        let height = Math.max(body.scrollHeight, body.offsetHeight,
+                                              html.clientHeight, html.scrollHeight, html.offsetHeight);
+                        let width = Math.max(body.scrollWidth, body.offsetWidth,
+                                              html.clientWidth, html.scrollWidth, html.offsetWidth);
+                         let buffer = 200;
+                        iframe.style.height = buffer + height + "px";
+                        iframe.style.width =  width + "px";
+                    }, 50);*/
                 },
                 error: function () {
                     $("#campaign-dropdown").html('<option value="">Failed to load campaigns</option>');
@@ -258,8 +336,10 @@ $(document).ready(function () {
             try {
                 let array = listData[selectedId].emails;
                 let selectedElements = array.length >= 3 ? array.slice(0, 3) : array;
-                $("#example-data").text(selectedElements);
-                $("#download-list").show();
+                let preview="";
+                selectedElements.forEach(x=>{preview += x+"<br/>"});
+                $("#example-data").html(preview);
+                $("#download-list").show().css('display','inline-block');
             } catch {
                 $("#example-data").text("Charlie done messed up boiyi");
                 
@@ -270,6 +350,7 @@ $(document).ready(function () {
         // Download exact file from the server
         $("#download-list").on("click", function() {
             let selectedId = $("#list-dropdown").val();
+            console.log("id:"+selectedId);
             if (!selectedId || !listData[selectedId]?.filename) {
                 alert("No file available for download");
                 return;

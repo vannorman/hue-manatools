@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail Campaign Manager</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/main.js"> </script>
+    <link rel='stylesheet' href='/static/css/index.css' />
+</head>
+
+<body>
+    <div id="main">
+        <h1>Mail Campaign Manager</h1>
+        
+        <form id="campaign-form">
+
+            Select a Campaign:
+            <select id="campaign-dropdown">
+                <option value="">Loading campaigns...</option>
+            </select>
+        <br/>
+            Select an existing List:
+            <select id="list-dropdown">
+                <option value="">Loading lists...</option>
+            </select>
+            <div id="download-list">Download this list</div>
+            <br/><label for="csv-file"> Upload new List  (CSV File):</label>
+            <input type="file" id="csv-file" name="csv-file" accept=".csv" >
+        <br/>
+            <div style="width:80%;height:80px;background-color:#ccc;white-space:nowrap;" id="example-data">No list loaded yet...</div>
+        <br/> 
+            From:
+            <select id="from-dropdown">
+                <option value="">Loading froms...</option>
+            </select>
+             
+        <br/>
+            <label for="subject-line">Subject Line:</label>
+            <input type="text" id="subject-line" name="subject-line" style="width:60%"><br><br>
+            <button id="start-campaign">Start Campaign</button>
+            <br/>
+            <br/>
+        <div id="testDiv" style="padding:10px;width:80%;height:auto;border:1px solid gray;background-color:#ccf;"> 
+            <h3> Testing </h3>
+            <label for="test-emails">Enter test data per line: <br/>Name1,email1@email.com<br/>Name2,email2@email.com</label>
+            <br/>
+            <textarea id="test-emails" name="test-emails" rows="4" cols="50"></textarea>
+            
+            <br/>
+            <button type="button" id="run-test">Run Test</button>
+            <div id="test-results" style="width:95%;height:auto;border:1px solid black;background-color:#ccc;"></div><br>
+        </div>
+           <br/> 
+            <iframe id="campaign-preview"></iframe>
+            <div id="campaign-status"></div>
+        </form>
+        
+    </div> 
+
+</body>
+</html>
+
+

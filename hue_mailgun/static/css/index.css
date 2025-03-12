@@ -16,7 +16,7 @@ body {
     overflow-x:hidden;
     background-image:url('/static/img/bg.jpg');
     background-repeat:repeat;
-    background-size:33%;
+    background-size:330px;
 }
 
 #main {
@@ -29,6 +29,57 @@ body {
     position:relative;
     margin-top:100px;
     padding:40px;
+    margin-bottom:140px;
+}
+
+
+#run-test {
+    margin:0 auto;
+    border-radius:30px;
+    border:1px solid black;
+    background-color:#eee;
+    font-size:1.1em;
+    font-weight:bold;
+    padding:10px 20px;
+    transition: all 0.2s;
+    position:relative;
+}
+#run-test:hover {
+    cursor:pointer;
+    background-color:#ddd;
+}#start-campaign {
+    margin:0 auto;
+    border-radius:30px;
+    border:1px solid black;
+    background-color:#eee;
+    font-size:1.2em;
+    font-weight:bold;
+    padding:15px 30px;
+    transition: all 0.2s;
+    position:relative;
+}
+#start-campaign:hover {
+    cursor:pointer;
+    background-color:#ddd;
+}
+#download-list {
+    display:inline-block;
+    width:142px;
+    padding: 0 10px;
+    height:23px;
+    border:1px solid black;
+    background-color:gray;
+    display:none;
+
+}
+#download-list:hover {
+    cursor:pointer;
+}
+#campaign-preview {
+  width:100%;
+  padding:10px;
+  height:100%;border:1px solid blue;
+
 }
 @font-face {
     font-family: Nunito;
