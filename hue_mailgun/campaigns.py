@@ -40,6 +40,60 @@ def valid_email(email):
     pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     return re.match(pattern, email) is not None
 
+def get_recipients_from_file(filename):
+    data_list = []
+    dir_path = os.path.dirname(os.path.realpath(__file__)) 
+    LIST_DIR = os.path.join(dir_path,LISTS_FOLDER)
+    if filename.endswith(".csv"):
+        full_path = os.path.join(LIST_DIR,filename)
+        # Read the first line of a file and store as a string
+        with open(full_path, "r") as f:
+            lines = f.readlines()
+            for line in lines:
+                print(line)
+                l = line.split(',')
+                name = l[0]
+                email = l[1]
+                data_list.append([name,email])
+            # print("ems:"+str(emails))
+            
+
+    return data_list
+    
+
+@app.route("/run-campaign", methods=["POST"])
+def run_campaign():
+    data = request.get_json()
+    print("HI:C")
+    filename = data.get('csvFileName')
+    print(filename)
+    try: recipients = get_recipients_from_file(filename)
+    except: return jsonify({"success": False, "message": "Get recipients from file didn't work: "+data.get('csvFileName')})
+    
+    contacts = [] # dupliate of recipients, but check each email first
+    for r in recipients:
+        try:
+            name = r[0]
+            email = r[1].strip()
+            if not valid_email(email):
+                return jsonify({"success": False, "message": "The email "+email+" doesn't appear to be valid."});
+            else:
+                contacts.append([name,email])
+                
+        except:
+            return jsonify({"success": False, "message": "Failed on '"+str(r)+"'\n\n The formatting of your recipients seems wrong. Is it 'name,email@email.com' with one per line? Check your commas, there should be one comma per line. Check for empty lines at the end, and delete them."})
+            
+
+    # TODO :Validate "contacts" 
+    from_addr = data.get('from')
+    campaign = data.get('campaign')
+    subject = data.get('subject')
+    # print ("Send campaign "+campaign+" to "+str(len(contacts))+" contacts w subject:"+subject+", from;"+from_addr)
+    try: send_to_contacts(contacts,data.get('subject'),data.get('from'),data.get('campaign'))
+    except: 
+        return jsonify({"success": False, "message": "Failed ..!'"})
+
+    return jsonify({"success": True, "lists": data})
 
 @app.route("/run-test", methods=["POST"])
 def run_test():
@@ -111,14 +165,17 @@ def get_lists():
             # Read the first line of a file and store as a string
             with open(full_path, "r") as f:
                 lines = f.readlines()
-                first_line = lines[0].strip()
+                list_sample=""
+                num_in_sample = min(len(lines),4)
+                for i in range(num_in_sample):
+                    list_sample += lines[i].strip()
                 count = len(lines)
-                print("c:"+str(count))
-                emails = lines[1:count]
-                print("ems:"+str(emails))
+                print("count:"+str(count))
+                emails = lines[0:count]
+                # print("ems:"+str(emails))
                 
             data_list.append({
-                "data": {"filename":filename,"listname":first_line,"id":index,"count":count,"emails":emails}  # Store CSV data
+                "data": {"filename":filename,"listSample":list_sample,"id":index,"count":count,"emails":emails}  # Store CSV data
             })
             index += 1
 
@@ -163,10 +220,10 @@ def get_campaign():
         if response.status_code == 200:
             template_data = response.json()
             # data = template_data["template"]["version"]["template"]
-            print("YES")
-            print(template_data)
             version = template_data['template']['versions'][0]['tag']
-            print("VERS:"+version)
+#            print("YES")
+#            print(template_data)
+#            print("VERS:"+version)
             url = "https://api.mailgun.net/v3/huehd.com/templates/"+template_id+"/versions/"+version
             response = requests.get(url, auth=("api", MAILGUN_API_KEY))
             if response.status_code == 200:

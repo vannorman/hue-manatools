@@ -12,6 +12,11 @@ function uploadFile(file, overwrite) {
         success: function (response) {
             $("#message").text(response.message);
             loadLists();
+            console.log("filename:"+file.name);
+            setTimeout(function(){
+                // because we empty list after loading new from server.
+                $('#list-dropdown option').filter(function(){return $(this).val()==file.name}).prop('selected',true);
+                },200);
         },
         error: function () {
             alert("Error uploading file.");
@@ -111,41 +116,6 @@ $(document).ready(function () {
         reader.readAsText(file);
     });
 
-    function ValidateFormData(){
-        let campaign = $('#campaign-dropdown').val();
-        let from = $('#from-dropdown').val();
-        let subject = $('#subject-line').val();
-        let testEmails  = $('#test-emails').val();
-
-        if (campaign == "") {
-            alert("No campaign!");
-            return {}
-        }
-
-        if (from == "") {
-            alert("No from address!");
-            return {}
-        }
-
-        if (subject == ""){
-            alert("No subject!");
-            return {}
-        }
-
-        if (!testEmails.includes('@')){
-            alert("No test email receipients!");
-        }
-        console.log(campaign);
-        const data = {
-            campaign : campaign, 
-            from : from, 
-            subject : subject, 
-            recipients : testEmails, 
-        }
-        return data; 
-
-    }
-
     $("#run-test").click(function () {
         let data = ValidateFormData();
           $.ajax({
@@ -172,11 +142,8 @@ $(document).ready(function () {
     });
     
     $("#start-campaign").click(function () {
-        if (confirm("Are you sure you want to start the campaign?")) {
-            $.post("/start-campaign", $("#campaign-form").serialize(), function (data) {
-                $("#campaign-status").html(data);
-            });
-        }
+        RunCampaign();
+        
     });
     
     $("#view-analytics").click(function () {
@@ -265,9 +232,10 @@ $(document).ready(function () {
 
                 if (response.success) {
                     response.lists.forEach(function (x) {
-                        dropdown.append(`<option value="${x.data.id}">${x.data.filename} - ${x.data.listname} - ${x.data.count}</option>`);
+                        console.log(x)
+                        dropdown.append(`<option value="${x.data.filename}" data-text="${x.data.id}">${x.data.filename} - ${x.data.listSample} - ${x.data.count}</option>`);
                         // console.log("list data for "+x.data.id+" is "+JSON.stringify(x.data));
-                        listData[x.data.id] = x.data;
+                        listData[x.data.filename] = x.data;
                     });
 
                 } else {
@@ -366,3 +334,99 @@ $(document).ready(function () {
     loadLists();
     loadFroms();
 });
+
+function RunCampaign(){
+    console.log("run");
+    const data = ValidateFormData({test:false});
+    if (data == false) return;
+    let reader = new FileReader();
+    contacts = []
+    let count = listData[data.csvFileName].count;
+    if (confirm("Are you sure you want to send the "+data.campaign+" campaign to "+count+" contacts:\n"+
+    "from:"+data.from+"\n"+
+    "subject:"+data.subject+"\n"+
+    "including:"+listData[data.csvFileName].listSample+"\n"+
+    "..?")){
+
+          $.ajax({
+            url: "/run-campaign", // Update to your Flask API URL
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(data),
+            success: function (response) {
+                if (response.success){
+                    console.log("S:"+JSON.stringify(response));
+
+                } else {
+                alert(response.message);
+                
+                }
+            },
+            error: function (response) {
+                console.log(JSON.parse(JSON.stringify(response)).message);
+                console.log(response);
+                console.log("er:"+JSON.stringify(response));
+            }
+
+        });
+ 
+        console.log('ok');
+    }
+
+}
+
+function ValidateFormData(args={}){
+    const {test=true} = args;
+    let campaign = $('#campaign-dropdown').val();
+    let from = $('#from-dropdown').val();
+    let subject = $('#subject-line').val();
+    let testEmails  = $('#test-emails').val();
+    let csvFileName = "none"
+    let contactCount = 0;
+    let contactSample = "";
+    if (!test){
+        csvFileName = $('#list-dropdown').val(); 
+        if (csvFileName == ""){
+
+            alert("No csv was selected.");
+            return false;
+        } else {
+            listData[csvFileName];
+        }
+    } else {
+        if (!testEmails.includes('@')){
+            alert("No test email receipients!");
+            return false;
+            
+        }
+
+    }
+    
+    
+    if (campaign == "") {
+        alert("No campaign!");
+        return false;
+    }
+
+    if (from == "") {
+        alert("No from address!");
+        return false;
+    }
+
+    if (subject == ""){
+        alert("No subject!");
+        return false;
+    }
+
+    const data = {
+        campaign : campaign, 
+        from : from, 
+        subject : subject, 
+        recipients : testEmails, 
+        csvFileName : csvFileName,
+    }
+    return data; 
+
+}
+
+
