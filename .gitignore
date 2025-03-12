@@ -1,3 +1,5 @@
+*.env
+*.sh
 *.swp
 *.csv
 .env
@@ -5,4 +7,6 @@ venv
 venv/
 venv/*
 files/
-
+*.pyc
+*.swo
+wsgi*.*
