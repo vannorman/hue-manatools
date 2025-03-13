@@ -81,11 +81,6 @@ def create_user():
     flash("Account created successfully! You can now log in.", "success")
     return redirect(url_for('login'))
 
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
-    flash("Logged out successfully!", "info")
-    return redirect(url_for('login'))
 
 @app.route('/dashboard')
 @app.route('/dashboard/')

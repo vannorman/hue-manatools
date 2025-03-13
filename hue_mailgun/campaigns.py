@@ -34,7 +34,7 @@ def get_analytics():
 
     return jsonify(data_list)  # Return JSON response
 
-LISTS_FOLDER = "static/lists"
+LISTS_FOLDER = "lists"
 
 def valid_email(email):
     pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
@@ -170,7 +170,7 @@ def get_lists():
                 for i in range(num_in_sample):
                     list_sample += lines[i].strip()
                 count = len(lines)
-                print("count:"+str(count))
+                # print("count:"+str(count))
                 emails = lines[0:count]
                 # print("ems:"+str(emails))
                 
@@ -205,8 +205,6 @@ def download_file(filename):
     
     return send_from_directory(LIST_DIR, filename, as_attachment=True)
 
-if __name__ == "__main__":
-    app.run(debug=True)
 
 @app.route("/get-campaign", methods=["POST"])
 def get_campaign():
@@ -266,7 +264,7 @@ def get_campaigns():
         if response.status_code == 200:
             # We got the list.
             data = response.json().get('items')
-            print(data)
+            #print(data)
             campaigns = []
             for i in range(len(data)): 
                 campaigns.append(data[i])
@@ -319,6 +317,8 @@ def upload_list():
     file.save(file_path)
     return jsonify({"message": "File uploaded successfully"})
 
+print("HI")
+
 @app.route('/get-from-addresses', methods=["POST"])
 def get_authorized_from_addresses():
     url = "https://api.mailgun.net/v3/huehd.com/domains"
@@ -345,4 +345,29 @@ def get_authorized_from_addresses():
 def analytics():
     return render_template('analytics.html',)
 
+PASSWORD = os.getenv("PASSWORD")
+print("API:"+MAILGUN_API_KEY)
+print("PW:"+PASSWORD)
+@app.route('/campaign', methods=['GET','POST'])
+def campaign():
+    if request.method == 'POST':
+        if request.form.get('password') == PASSWORD:
+            session['logged_in'] = True
+            return redirect(url_for('campaign'))
+        else:
+            return "Incorrect password", 403
 
+    if not session.get('logged_in'):
+        return '''
+        <form method="POST">
+            <input type="password" name="password" placeholder="Enter password">
+            <button type="submit">Login</button>
+        </form>
+        '''
+
+    return render_template('campaign.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)  # Remove session data
+    return redirect(url_for('campaign'))  # Redirect to login page
