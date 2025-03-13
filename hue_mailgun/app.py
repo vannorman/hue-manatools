@@ -6,6 +6,7 @@ from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, redirect, render_template, session, url_for, jsonify, request, abort, send_from_directory
 
+LOCAL = False
 try: from settings_local import *
 except: LOCAL = False
 if not LOCAL:
