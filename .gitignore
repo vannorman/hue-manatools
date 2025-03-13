@@ -10,3 +10,4 @@ files/
 *.pyc
 *.swo
 wsgi*.*
+settings_local.py
