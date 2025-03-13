@@ -95,7 +95,8 @@ def run_campaign():
     except: 
         return jsonify({"success": False, "message": "Failed ..!'"})
 
-    return jsonify({"success": True, "lists": data})
+    data['count'] = len(contacts)
+    return jsonify({"success": True, "data": data})
 
 @app.route("/run-test", methods=["POST"])
 def run_test():

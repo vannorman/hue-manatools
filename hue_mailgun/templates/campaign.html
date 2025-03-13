@@ -22,7 +22,7 @@
             </select>
         <br/>
             Select an existing List:
-            <select id="list-dropdown">
+            <select id="list-dropdown" style="width:400px;" >
                 <option value="">Loading lists...</option>
             </select>
             <div id="download-list">Download this list</div>
@@ -30,6 +30,7 @@
             <input type="file" id="csv-file" name="csv-file" accept=".csv" >
         <br/>
             <div style="width:80%;height:80px;background-color:#ccc;white-space:nowrap;" id="example-data">No list loaded yet...</div>
+            <div style="border:1px dotted black;padding:4px;width:200px;" id="list-count">0 contacts in current list</div>
         <br/> 
             From:
             <select id="from-dropdown">
@@ -40,6 +41,7 @@
             <label for="subject-line">Subject Line:</label>
             <input type="text" id="subject-line" name="subject-line" style="width:60%"><br><br>
             <div id="start-campaign">Start Campaign</div>
+            <div id="campaign-results" style="width:95%;height:auto;border:1px solid black;background-color:#ccc;"></div><br>
             <br/>
             <br/>
         <div id="testDiv" style="padding:10px;width:80%;height:auto;border:1px solid gray;background-color:#ccf;"> 

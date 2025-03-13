@@ -10,14 +10,19 @@ function uploadFile(file, overwrite) {
         processData: false,
         contentType: false,
         success: function (response) {
-            $("#message").text(response.message);
             loadLists();
-            console.log("filename:"+file.name);
+            //console.log("filename:"+file.name);
             let timeout = 200;
-            if (window.location.href.includes('localhost')) timeout= 1500; // due to charlie's local refresh dev environment that auto reloads server on file changes like detecting the uploaded file. Server does not auto refresh so doesn't need much time to refresh
+            if (window.location.href.includes('localhost')) timeout= 2000; // due to charlie's local refresh dev environment that auto reloads server on file changes like detecting the uploaded file. Server does not auto refresh so doesn't need much time to refresh
             setTimeout(function(){
                 // because we empty list after loading new from server.
-                $('#list-dropdown option').filter(function(){return $(this).val()==file.name}).prop('selected',true);
+                let selected = $('#list-dropdown option').filter(function(){
+                    let a = $(this).val().toLowerCase();
+                    let b = file.name.toLowerCase();
+                    let result = a===b;
+                    return result;
+                });
+                setTimeout(function(){selected.prop('selected',true).trigger('change');},200);
                 },timeout);
         },
         error: function () {
@@ -120,6 +125,7 @@ $(document).ready(function () {
 
     $("#run-test").click(function () {
         let data = ValidateFormData();
+        if (!data) return;
           $.ajax({
             url: "/run-test", // Update to your Flask API URL
             type: "POST",
@@ -127,21 +133,21 @@ $(document).ready(function () {
             data: JSON.stringify(data),
             success: function (response) {
                 if (response.success){
-                    console.log("Send success w data:"+JSON.stringify(response));
+                    // console.log("Send success w data:"+JSON.stringify(response));
                     let subject = response.result.data.subject;
                     let count = response.result.count;
                     let from = response.result.data.from;
                     let recipients = response.result.data.recipients.substr(0,100);
                     $('#test-results').text("Success! '"+from+"' Sent ' "+subject+"' to  "+response.result.count+" recipients including "+recipients);
                 } else {
-                alert(response.message);
+                 alert(response.message);
                 
                 }
             },
             error: function (response) {
-                console.log(JSON.parse(JSON.stringify(response)).message);
-                console.log(response);
-                console.log("er:"+JSON.stringify(response));
+//                console.log(JSON.parse(JSON.stringify(response)).message);
+//                console.log(response);
+//                console.log("er:"+JSON.stringify(response));
             }
 
         });
@@ -238,7 +244,7 @@ $(document).ready(function () {
 
                 if (response.success) {
                     response.lists.forEach(function (x) {
-                        console.log(x)
+                        // console.log(x)
                         dropdown.append(`<option value="${x.data.filename}" data-text="${x.data.id}">${x.data.filename} - ${x.data.listSample} - ${x.data.count}</option>`);
                         // console.log("list data for "+x.data.id+" is "+JSON.stringify(x.data));
                         listData[x.data.filename] = x.data;
@@ -307,6 +313,7 @@ $(document).ready(function () {
         // Populate #example-data when a list is selected
         $("#list-dropdown").on("change", function() {
             let selectedId = $(this).val();
+            console.log("selected id:"+selectedId);
             try {
                 let array = listData[selectedId].emails;
                 let selectedElements = array.length >= 3 ? array.slice(0, 3) : array;
@@ -314,6 +321,7 @@ $(document).ready(function () {
                 selectedElements.forEach(x=>{preview += x+"<br/>"});
                 $("#example-data").html(preview);
                 $("#download-list").show().css('display','inline-block');
+                $('#list-count').text(array.length+" contacts in current list"); 
             } catch {
                 $("#example-data").text("Charlie done messed up boiyi");
                 
@@ -361,11 +369,15 @@ function RunCampaign(){
             data: JSON.stringify(data),
             success: function (response) {
                 if (response.success){
-                    console.log("S:"+JSON.stringify(response));
-
+                    // console.log("S:"+JSON.stringify(response));
+                    let subject = response.data.subject;
+                    let count = response.data.count;
+                    let from = response.data.from;
+                    let campaign = response.data.campaign
+                    $('#campaign-results').text("Success! '"+from+"' Sent ' "+subject+"' to  "+count+" recipients for campaign "+campaign);
+ 
                 } else {
-                alert(response.message);
-                
+                    $('#campaign-results').text("Error:"+JSON.stringify(response));
                 }
             },
             error: function (response) {
@@ -390,11 +402,19 @@ function ValidateFormData(args={}){
     let csvFileName = "none"
     let contactCount = 0;
     let contactSample = "";
+   
+    
+    if (campaign == "") {
+        alert("No campaign!");
+        flashElement($('#campaign-dropdown'));
+        return false;
+    }
     if (!test){
         csvFileName = $('#list-dropdown').val(); 
         if (csvFileName == ""){
 
             alert("No csv was selected.");
+            flashElement($('#list-dropdown'));
             return false;
         } else {
             listData[csvFileName];
@@ -402,25 +422,22 @@ function ValidateFormData(args={}){
     } else {
         if (!testEmails.includes('@')){
             alert("No test email receipients!");
+            flashElement($('#test-emails'));
             return false;
             
         }
 
     }
-    
-    
-    if (campaign == "") {
-        alert("No campaign!");
-        return false;
-    }
-
+ 
     if (from == "") {
         alert("No from address!");
+        flashElement($('#from-dropdown'));
         return false;
     }
 
     if (subject == ""){
         alert("No subject!");
+        flashElement($('#subject-line'));
         return false;
     }
 
@@ -433,6 +450,25 @@ function ValidateFormData(args={}){
     }
     return data; 
 
+}
+
+animations = {}
+function flashElement(element) {
+    if (!element) return;
+    if (!animations.hasOwnProperty(element)) {
+        animations[element] = {
+            origBg : element.css('background-color'),
+            animFn : null,
+        }
+    }
+
+    clearTimeout(animations[element].animFn);
+    element.css('transition','all 0s')
+            .css('background-color','red')
+            .css('transition','all 0.3s');
+    animations[element].animFn = setTimeout(function(){
+        element.css('background-color',animations[element].origBg);
+    },350)
 }
 
 
