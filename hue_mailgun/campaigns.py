@@ -47,7 +47,7 @@ def get_recipients_from_file(filename):
     if filename.endswith(".csv"):
         full_path = os.path.join(LIST_DIR,filename)
         # Read the first line of a file and store as a string
-        with open(full_path, "r") as f:
+        with open(full_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
             for line in lines:
                 print(line)
@@ -167,7 +167,7 @@ def get_lists():
         if filename.endswith(".csv"):
             full_path = os.path.join(LIST_DIR,filename)
             # Read the first line of a file and store as a string
-            with open(full_path, "r") as f:
+            with open(full_path, "r", encoding="utf-8") as f:
                 lines = f.readlines()
                 list_sample=""
                 num_in_sample = min(len(lines),4)
@@ -296,7 +296,7 @@ def try_upload_list():
 
     lines = 0
     try:
-        with open(file_path, "r") as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             lines = len(f.readlines())
     except Exception as e:
         print(e)
