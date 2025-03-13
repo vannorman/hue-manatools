@@ -1,7 +1,6 @@
 *.env
 *.sh
 *.swp
-*.csv
 .env
 venv
 venv/
