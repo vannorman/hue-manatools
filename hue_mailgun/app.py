@@ -6,9 +6,13 @@ from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, redirect, render_template, session, url_for, jsonify, request, abort, send_from_directory
 
-from dotenv import find_dotenv, load_dotenv
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+try: from settings_local import *
+except: LOCAL = False
+if not LOCAL:
+    # Server
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
+from dotenv import find_dotenv, load_dotenv
 ENV_FILE = find_dotenv()
 if ENV_FILE:
     print("Found")

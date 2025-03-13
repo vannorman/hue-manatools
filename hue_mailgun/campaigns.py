@@ -75,6 +75,8 @@ def run_campaign():
         try:
             name = r[0]
             email = r[1].strip()
+            print("R:"+str(r))
+            print("EM:"+email)
             if not valid_email(email):
                 return jsonify({"success": False, "message": "The email "+email+" doesn't appear to be valid."});
             else:
@@ -106,7 +108,7 @@ def run_test():
     for r in recipients:
         try:
             t = r.split(',')
-            email = t[0]
+            email = t[1].strip()
             if valid_email(email):
                 contacts.append([t[0],t[1]])
             else:
@@ -117,8 +119,10 @@ def run_test():
             
 
     # TODO :Validate "contacts" 
-    send_to_contacts(contacts,data.get('subject'),data.get('from'),data.get('campaign'))
-    return jsonify({"success": True, "lists": data})
+    try: send_to_contacts(contacts,data.get('subject'),data.get('from'),data.get('campaign'))
+    except: return jsonify({"success": False, "message": "Failed with contacts:"+str(contacts)+", with data;"+str(data)})
+    
+    return jsonify({"success": True, "result": {"count":len(contacts),"data":data}})
 
 def send_simple_message(name,email,subject,from_address,template):
 	return requests.post(
@@ -325,11 +329,12 @@ def get_authorized_from_addresses():
     response = requests.get(url, auth=("api", MAILGUN_API_KEY))
     return jsonify({"success":True,
     "data":[
-        "HUE Crew, marketing@huehd.com",
-        "HUE Sales, sales@huehd.com",
+        "Jordan Dowthwaite-Clark, jordan@huehd.com",
+        "Michael Fiden, michael@huehd.com",
         "Cathy Doel, cathy@huehd.com",
-        "Jordan, jordan@huehd.com",
-        "Charlie, charlie@huehd.com",]
+        "Charlie Van Norman, charlie@huehd.com", 
+        "HUE Crew, marketing@huehd.com",
+        "HUE Sales, sales@huehd.com",]
      })
     print(response)
 

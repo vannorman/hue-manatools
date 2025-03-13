@@ -13,10 +13,12 @@ function uploadFile(file, overwrite) {
             $("#message").text(response.message);
             loadLists();
             console.log("filename:"+file.name);
+            let timeout = 200;
+            if (window.location.href.includes('localhost')) timeout= 1500; // due to charlie's local refresh dev environment that auto reloads server on file changes like detecting the uploaded file. Server does not auto refresh so doesn't need much time to refresh
             setTimeout(function(){
                 // because we empty list after loading new from server.
                 $('#list-dropdown option').filter(function(){return $(this).val()==file.name}).prop('selected',true);
-                },200);
+                },timeout);
         },
         error: function () {
             alert("Error uploading file.");
@@ -125,8 +127,12 @@ $(document).ready(function () {
             data: JSON.stringify(data),
             success: function (response) {
                 if (response.success){
-                    console.log("S:"+JSON.stringify(response));
-
+                    console.log("Send success w data:"+JSON.stringify(response));
+                    let subject = response.result.data.subject;
+                    let count = response.result.count;
+                    let from = response.result.data.from;
+                    let recipients = response.result.data.recipients.substr(0,100);
+                    $('#test-results').text("Success! '"+from+"' Sent ' "+subject+"' to  "+response.result.count+" recipients including "+recipients);
                 } else {
                 alert(response.message);
                 
