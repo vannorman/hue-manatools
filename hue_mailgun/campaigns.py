@@ -2,6 +2,7 @@ import os, sys, re, json, requests
 from datetime import datetime
 from os import environ as env
 from urllib.parse import quote_plus, urlencode
+import logging
 
 from authlib.integrations.flask_client import OAuth
 from dotenv import find_dotenv, load_dotenv
@@ -64,39 +65,174 @@ def get_recipients_from_file(filename):
 @app.route("/run-campaign", methods=["POST"])
 def run_campaign():
     data = request.get_json()
-    print("HI:C")
-    filename = data.get('csvFileName')
-    print(filename)
-    try: recipients = get_recipients_from_file(filename)
-    except: return jsonify({"success": False, "message": "Get recipients from file didn't work: "+data.get('csvFileName')})
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting campaign with data: {json.dumps(data)}")
     
-    contacts = [] # dupliate of recipients, but check each email first
-    for r in recipients:
-        try:
-            name = r[0]
-            email = r[1].strip()
-            print("R:"+str(r))
-            print("EM:"+email)
-            if not valid_email(email):
-                return jsonify({"success": False, "message": "The email "+email+" doesn't appear to be valid."});
-            else:
-                contacts.append([name,email])
+    try:
+        filename = data.get('csvFileName')
+        if not filename:
+            return jsonify({"success": False, "message": "No CSV file selected"})
+        
+        # Get recipient list
+        try: 
+            recipients = get_recipients_from_file(filename)
+        except Exception as e:
+            logger.error(f"Failed to get recipients from file {filename}: {str(e)}")
+            return jsonify({
+                "success": False, 
+                "message": f"Could not read recipient file: {filename}. Error: {str(e)}"
+            })
+        
+        # Validate each email
+        contacts = []  # validated recipients
+        invalid_emails = []
+        
+        for r in recipients:
+            try:
+                name = r[0]
+                email = r[1].strip()
                 
-        except:
-            return jsonify({"success": False, "message": "Failed on '"+str(r)+"'\n\n The formatting of your recipients seems wrong. Is it 'name,email@email.com' with one per line? Check your commas, there should be one comma per line. Check for empty lines at the end, and delete them."})
-            
+                if not valid_email(email):
+                    invalid_emails.append(email)
+                else:
+                    contacts.append([name, email])
+            except Exception as e:
+                logger.error(f"Failed to parse recipient {r}: {str(e)}")
+                return jsonify({
+                    "success": False, 
+                    "message": f"Failed to parse recipient '{str(r)}'. Error: {str(e)}"
+                })
+        
+        # Check if any emails were invalid
+        if invalid_emails:
+            return jsonify({
+                "success": False, 
+                "message": f"Found {len(invalid_emails)} invalid emails: {', '.join(invalid_emails[:5])}" + 
+                          (f" and {len(invalid_emails) - 5} more" if len(invalid_emails) > 5 else "")
+            })
+        
+        # Get campaign parameters
+        from_addr = data.get('from')
+        campaign_name = data.get('campaign')
+        subject = data.get('subject')
+        
+        # Create a new campaign status record
+        from models import CampaignStatus, EmailLog, db
+        
+        campaign_status = CampaignStatus(
+            campaign_name=campaign_name,
+            from_address=from_addr,
+            subject=subject,
+            list_name=filename,
+            total_recipients=len(contacts),
+            status='pending'
+        )
+        
+        db.session.add(campaign_status)
+        db.session.flush()  # Get the ID without committing
+        
+        # Create email log entries for each recipient
+        for contact in contacts:
+            name, email = contact
+            email_log = EmailLog(
+                campaign_id=campaign_status.id,
+                recipient_name=name,
+                recipient_email=email,
+                status='pending'
+            )
+            db.session.add(email_log)
+        
+        # Commit all database changes
+        db.session.commit()
+        
+        # Start the campaign processing in the background
+        from tasks import process_campaign
+        process_campaign.delay(campaign_status.id)
+        
+        logger.info(f"Campaign {campaign_status.id} queued with {len(contacts)} recipients")
+        
+        # Return success with the campaign ID for status tracking
+        return jsonify({
+            "success": True, 
+            "data": {
+                "campaign_id": campaign_status.id,
+                "campaign": campaign_name,
+                "from": from_addr,
+                "subject": subject,
+                "count": len(contacts),
+                "status": "queued"
+            }
+        })
+        
+    except Exception as e:
+        logger.exception(f"Campaign creation failed: {str(e)}")
+        return jsonify({"success": False, "message": f"Failed to start campaign: {str(e)}"})
 
-    # TODO :Validate "contacts" 
-    from_addr = data.get('from')
-    campaign = data.get('campaign')
-    subject = data.get('subject')
-    # print ("Send campaign "+campaign+" to "+str(len(contacts))+" contacts w subject:"+subject+", from;"+from_addr)
-    try: send_to_contacts(contacts,data.get('subject'),data.get('from'),data.get('campaign'))
-    except: 
-        return jsonify({"success": False, "message": "Failed ..!'"})
+# Add a new route to check campaign status
+@app.route("/campaign-status/<int:campaign_id>", methods=["GET"])
+def campaign_status(campaign_id):
+    try:
+        from models import CampaignStatus
+        
+        campaign = CampaignStatus.query.get(campaign_id)
+        if not campaign:
+            return jsonify({"success": False, "message": f"Campaign {campaign_id} not found"}), 404
+        
+        return jsonify({
+            "success": True,
+            "data": campaign.to_dict()
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error getting campaign status: {str(e)}")
+        return jsonify({"success": False, "message": f"Error getting campaign status: {str(e)}"}), 500
 
-    data['count'] = len(contacts)
-    return jsonify({"success": True, "data": data})
+# Add a route to get all active campaigns for the dashboard
+@app.route("/active-campaigns", methods=["GET"])
+def active_campaigns():
+    try:
+        from models import CampaignStatus
+        
+        # Get all campaigns from the last 24 hours
+        from datetime import datetime, timedelta
+        since = datetime.utcnow() - timedelta(days=1)
+        
+        campaigns = CampaignStatus.query.filter(
+            CampaignStatus.created_at >= since
+        ).order_by(CampaignStatus.created_at.desc()).all()
+        
+        return jsonify({
+            "success": True,
+            "data": [campaign.to_dict() for campaign in campaigns]
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error getting active campaigns: {str(e)}")
+        return jsonify({"success": False, "message": f"Error getting active campaigns: {str(e)}"}), 500
+
+# Route to get the details of email logs for a specific campaign
+@app.route("/campaign-details/<int:campaign_id>", methods=["GET"])
+def campaign_details(campaign_id):
+    try:
+        from models import CampaignStatus, EmailLog
+        
+        campaign = CampaignStatus.query.get(campaign_id)
+        if not campaign:
+            return jsonify({"success": False, "message": f"Campaign {campaign_id} not found"}), 404
+        
+        email_logs = EmailLog.query.filter_by(campaign_id=campaign_id).all()
+        
+        return jsonify({
+            "success": True,
+            "data": {
+                "campaign": campaign.to_dict(),
+                "emails": [log.to_dict() for log in email_logs]
+            }
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error getting campaign details: {str(e)}")
+        return jsonify({"success": False, "message": f"Error getting campaign details: {str(e)}"}), 500
 
 @app.route("/run-test", methods=["POST"])
 def run_test():

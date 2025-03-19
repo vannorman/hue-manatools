@@ -5,62 +5,114 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mail Campaign Manager</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="/static/js/main.js"> </script>
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/campaign-tracker.js"></script>
     <link rel='stylesheet' href='/static/css/index.css' />
+    <link rel='stylesheet' href='/static/css/campaigns.css' />
 </head>
 
 <body>
     <div id="main">
         <h1>Mail Campaign Manager</h1>
-<a href="{{ url_for('logout') }}">Logout</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
         
-        <form id="campaign-form">
-
-            Select a Campaign:
-            <select id="campaign-dropdown">
-                <option value="">Loading campaigns...</option>
-            </select>
-        <br/>
-            Select an existing List:
-            <select id="list-dropdown" style="width:400px;" >
-                <option value="">Loading lists...</option>
-            </select>
-            <div id="download-list">Download this list</div>
-            <br/><label for="csv-file"> Upload new List  (CSV File):</label>
-            <input type="file" id="csv-file" name="csv-file" accept=".csv" >
-        <br/>
-            <div style="width:80%;height:80px;background-color:#ccc;white-space:nowrap;" id="example-data">No list loaded yet...</div>
-            <div style="border:1px dotted black;padding:4px;width:200px;" id="list-count">0 contacts in current list</div>
-        <br/> 
-            From:
-            <select id="from-dropdown">
-                <option value="">Loading froms...</option>
-            </select>
-             
-        <br/>
-            <label for="subject-line">Subject Line:</label>
-            <input type="text" id="subject-line" name="subject-line" style="width:60%"><br><br>
-            <div id="start-campaign">Start Campaign</div>
-            <div id="campaign-results" style="width:95%;height:auto;border:1px solid black;background-color:#ccc;"></div><br>
-            <br/>
-            <br/>
-        <div id="testDiv" style="padding:10px;width:80%;height:auto;border:1px solid gray;background-color:#ccf;"> 
-            <h3> Testing </h3>
-            <label for="test-emails">Enter test data per line: <br/>Name1,email1@email.com<br/>Name2,email2@email.com</label>
-            <br/>
-            <textarea id="test-emails" name="test-emails" rows="4" cols="50"></textarea>
-            
-            <br/>
-            <button type="button" id="run-test">Run Test</button>
-            <div id="test-results" style="width:95%;height:auto;border:1px solid black;background-color:#ccc;"></div><br>
+        <div id="tabs">
+            <div class="tab active" data-tab="create-campaign">Create Campaign</div>
+            <div class="tab" data-tab="active-campaigns">Active Campaigns</div>
         </div>
-           <br/> 
-            <iframe id="campaign-preview"></iframe>
-            <div id="campaign-status"></div>
-        </form>
         
-    </div> 
-
+        <div id="tab-content">
+            <!-- Create Campaign Tab -->
+            <div class="tab-panel active" id="create-campaign-panel">
+                <form id="campaign-form">
+                    <div class="form-group">
+                        <label for="campaign-dropdown">Select a Campaign:</label>
+                        <select id="campaign-dropdown">
+                            <option value="">Loading campaigns...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="list-dropdown">Select an existing List:</label>
+                        <select id="list-dropdown" style="width:400px;">
+                            <option value="">Loading lists...</option>
+                        </select>
+                        <button type="button" id="download-list">Download this list</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="csv-file">Upload new List (CSV File):</label>
+                        <input type="file" id="csv-file" name="csv-file" accept=".csv">
+                    </div>
+                    
+                    <div class="list-preview">
+                        <div id="example-data">No list loaded yet...</div>
+                        <div id="list-count">0 contacts in current list</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="from-dropdown">From:</label>
+                        <select id="from-dropdown">
+                            <option value="">Loading from addresses...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="subject-line">Subject Line:</label>
+                        <input type="text" id="subject-line" name="subject-line" style="width:60%">
+                    </div>
+                    
+                    <button type="button" id="start-campaign">Start Campaign</button>
+                    <div id="campaign-results"></div>
+                    <div id="campaign-status-area" style="display:none;">
+                        <h3>Campaign Status</h3>
+                        <div class="progress-container">
+                            <div class="progress-bar" id="campaign-progress-bar"></div>
+                        </div>
+                        <div id="campaign-progress-text">0%</div>
+                        <div id="campaign-stats">
+                            <div>Sent: <span id="campaign-sent-count">0</span></div>
+                            <div>Failed: <span id="campaign-failed-count">0</span></div>
+                            <div>Status: <span id="campaign-current-status">Pending</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="test-section">
+                        <h3>Testing</h3>
+                        <div class="form-group">
+                            <label for="test-emails">Enter test data per line:<br>Name1,email1@email.com<br>Name2,email2@email.com</label>
+                            <textarea id="test-emails" name="test-emails" rows="4" cols="50"></textarea>
+                        </div>
+                        <button type="button" id="run-test">Run Test</button>
+                        <div id="test-results"></div>
+                    </div>
+                    
+                    <div class="preview-section">
+                        <h3>Campaign Preview</h3>
+                        <iframe id="campaign-preview"></iframe>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Active Campaigns Tab -->
+            <div class="tab-panel" id="active-campaigns-panel">
+                <h2>Active Campaigns</h2>
+                <div id="active-campaigns-list">
+                    <div class="loader">Loading campaigns...</div>
+                </div>
+                
+                <div id="campaign-details-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3>Campaign Details</h3>
+                        <div id="campaign-details-content">
+                            <!-- Campaign details will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 

@@ -1,128 +1,9 @@
-function uploadFile(file, overwrite) {
-    let formData = new FormData();
-    formData.append("file", file);
-    formData.append("overwrite", overwrite);
+// Campaign tracker functionality
+let listData = {};
+const activeCampaignTrackers = {};
 
-    $.ajax({
-        url: "/upload-list",
-        type: "POST",
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function (response) {
-            loadLists();
-            //console.log("filename:"+file.name);
-            let timeout = 200;
-            if (window.location.href.includes('localhost')) timeout= 2000; // due to charlie's local refresh dev environment that auto reloads server on file changes like detecting the uploaded file. Server does not auto refresh so doesn't need much time to refresh
-            setTimeout(function(){
-                // because we empty list after loading new from server.
-                let selected = $('#list-dropdown option').filter(function(){
-                    let a = $(this).val().toLowerCase();
-                    let b = file.name.toLowerCase();
-                    let result = a===b;
-                    return result;
-                });
-                setTimeout(function(){selected.prop('selected',true).trigger('change');},200);
-                },timeout);
-        },
-        error: function () {
-            alert("Error uploading file.");
-        }
-    });
-}
-
-$(document).ready(function () {
-    $('#csv-file').on('click',function(){
-            $('#csv-file').val('')
-
-    })
-    $('#csv-file').on('change',function(){
-        let file = document.getElementById("csv-file").files[0];
-        let formData = new FormData();
-        formData.append("file", file);
-        let numLinesInUploadFile = -1;
-        let reader = new FileReader();
-        reader.onload = function (e) {
-            let text = e.target.result;
-            let emails = [];
-            let duplicates = [];
-            let lines =  text.split(/\r\n|\n/);
-            numLinesInUploadFile = lines.length;
-            lines.forEach(line => {
-                let email = line.split(',')[1];
-                if (emails.includes(email)){
-                    duplicates.push(email);
-                } else{
-                    emails.push(email);    
-
-                }
-            });
-            if (duplicates.length > 0){
-                if (confirm('There were '+duplicates.length+" duplicate entries in "+file.name+", including "+JSON.stringify(duplicates).substr(0,100)+". Remove them?")){
-
-                    // Modify file: remove lines containing a specific value
-                    cleanedLines = []
-                    duplicateLines = [];
-                    lines.forEach(line=>{
-                        if (!cleanedLines.includes(line)){
-                            cleanedLines.push(line);
-                        } 
-                    });
-
-
-                    file = new File([cleanedLines.join("\n")], file.name, { type: file.type });
-                    
-                    alert("Removed "+duplicates.length+" duplicates from "+file.name+", now has "+cleanedLines.length+" unique lines.");
-                    numLinesInUploadFile = cleanedLines.length;
-                } else {
-                    alert("No duplicates removed. File still has "+lines.length+", "+duplicates.length+" of which are duplicates.");
-                }
-            }
-        };
-        reader.readAsText(file);// Modify file: remove lines containing a specific value
-
-        $.ajax({
-            url: "/try-upload-list",
-            type: "POST",
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function (response) {
-                if (response.exists) {
-                    
-                    if (confirm("File named "+file.name+" with "+response.lines+" lines already exists. Do you want to overwrite it with new file with "+numLinesInUploadFile+" lines?")) {
-                        uploadFile(file, true);
-                        alert('Your file '+file.name+' with '+numLinesInUploadFile+" was uploaded, replacing the previous one which had "+response.lines+" lines.");
-                    } else {
-                        alert('Did not replace existing file with '+response.lines+' with your file with '+numLinesInUploadFile+" lines.");
-
-                    }
-                } else {
-                    uploadFile(file, false);
-                    alert('Uploaded your file with '+numLinesInUploadFile+" lines.");
-                }
-            },
-            error: function () {
-                alert("Error checking file existence.");
-            }
-        });    
-    });
-    $("#preview-csv").click(function () {
-        let file = document.getElementById("csv-file").files[0];
-        let reader = new FileReader();
-        reader.onload = function (e) {
-            let content = e.target.result;
-            let lines = content.split("\n");
-            let preview = "<ul>";
-            for (let i = 0; i < Math.min(5, lines.length); i++) {
-                preview += "<li>" + lines[i] + "</li>";
-            }
-            preview += "</ul>";
-            $("#csv-preview").html(preview);
-        };
-        reader.readAsText(file);
-    });
-
+// Tab functionality
+$(document).ready(function() {
     // Tab functionality
     $('.tab').click(function() {
         const tabId = $(this).data('tab');
@@ -152,47 +33,12 @@ $(document).ready(function () {
             $('.modal').hide();
         }
     });
-
-    // Test button functionality
-    $("#run-test").click(function () {
-        let data = ValidateFormData();
-        if (!data) return;
-        
-        $.ajax({
-            url: "/run-test",
-            type: "POST",
-            contentType: "application/json",
-            data: JSON.stringify(data),
-            success: function (response) {
-                if (response.success) {
-                    let subject = response.result.data.subject;
-                    let count = response.result.count;
-                    let from = response.result.data.from;
-                    let recipients = response.result.data.recipients.substr(0, 100);
-                    $('#test-results').text("Success! '" + from + "' Sent '" + subject + "' to " + count + " recipients including " + recipients);
-                } else {
-                    $('#test-results').text("Error: " + response.message);
-                }
-            },
-            error: function (xhr) {
-                $('#test-results').text("Server error: " + xhr.responseText || "Unknown error");
-            }
-        });
-    });
     
     // Start campaign button
     $("#start-campaign").click(function () {
         RunCampaign();
     });
-    
-    // Load initial data
-    loadCampaigns();
-    loadLists();
-    loadFroms();
 });
-
-// Track active campaigns with their intervals
-const activeCampaignTrackers = {};
 
 function RunCampaign() {
     const data = ValidateFormData({test: false});
@@ -487,84 +333,4 @@ function escapeHtml(str) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
-}
-
-function ValidateFormData(args={}){
-    const {test=true} = args;
-    let campaign = $('#campaign-dropdown').val();
-    let from = $('#from-dropdown').val();
-    let subject = $('#subject-line').val();
-    let testEmails  = $('#test-emails').val();
-    let csvFileName = "none"
-    let contactCount = 0;
-    let contactSample = "";
-   
-    
-    if (campaign == "") {
-        alert("No campaign!");
-        flashElement($('#campaign-dropdown'));
-        return false;
-    }
-    if (!test){
-        csvFileName = $('#list-dropdown').val(); 
-        if (csvFileName == ""){
-
-            alert("No csv was selected.");
-            flashElement($('#list-dropdown'));
-            return false;
-        } else {
-            listData[csvFileName];
-        }
-    } else {
-        if (!testEmails.includes('@')){
-            alert("No test email receipients!");
-            flashElement($('#test-emails'));
-            return false;
-            
-        }
-
-    }
- 
-    if (from == "") {
-        alert("No from address!");
-        flashElement($('#from-dropdown'));
-        return false;
-    }
-
-    if (subject == ""){
-        alert("No subject!");
-        flashElement($('#subject-line'));
-        return false;
-    }
-
-    const data = {
-        campaign : campaign, 
-        from : from, 
-        subject : subject, 
-        recipients : testEmails, 
-        csvFileName : csvFileName,
-    }
-    return data; 
-
-}
-
-animations = {}
-function flashElement(element) {
-    if (!element) return;
-    if (!animations.hasOwnProperty(element)) {
-        animations[element] = {
-            origBg : element.css('background-color'),
-            animFn : null,
-        }
-    }
-
-    clearTimeout(animations[element].animFn);
-    element.css('transition','all 0s')
-            .css('background-color','red')
-            .css('transition','all 0.3s');
-    animations[element].animFn = setTimeout(function(){
-        element.css('background-color',animations[element].origBg);
-    },350)
-}
-
-
+} 
